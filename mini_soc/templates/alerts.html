@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block page_title %}Alerts{% endblock %}
+{% block content %}
+<div class="card">
+    <h3>Generated Alerts</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Timestamp</th>
+                <th>IP Address</th>
+                <th>Attack Type</th>
+                <th>Severity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for alert in alerts %}
+            <tr>
+                <td>#{{ alert.id }}</td>
+                <td>{{ alert.timestamp|date:"Y-m-d H:i:s" }}</td>
+                <td style="font-family: monospace;">{{ alert.ip_address }}</td>
+                <td>{{ alert.attack_type }}</td>
+                <td><span class="badge {{ alert.severity|lower }}">{{ alert.severity }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No alerts have been generated.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

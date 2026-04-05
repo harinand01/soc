@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block page_title %}Log Management{% endblock %}
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3>Application Logs</h3>
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'logs_index' %}" class="btn">Refresh</a>
+            <form method="POST" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" name="clear" class="btn danger">Clear Logs</button>
+            </form>
+        </div>
+    </div>
+    
+    <div style="max-height: 600px; overflow-y: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>IP Address</th>
+                    <th>Event</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="color: var(--text-secondary);">{{ log.timestamp }}</td>
+                    <td style="font-family: monospace;">{{ log.ip }}</td>
+                    <td>{{ log.event }}</td>
+                    <td>
+                        <span style="color: {% if log.status == 'Success' %}var(--success){% else %}var(--danger){% endif %}">
+                            {{ log.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No logs found in logs.txt.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

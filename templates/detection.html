@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block page_title %}Detection Engine{% endblock %}
+{% block content %}
+<div class="card">
+    <h3>Threat Detection</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 20px;">
+        Run the detection engine to analyze logs and identify potential threats. 
+        Current rules implemented: <strong>Brute Force Attack Detection</strong> (5+ failed logins from same IP).
+    </p>
+    
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn">Run Detection Analysis</button>
+    </form>
+    
+    {% if results %}
+    <div style="margin-top: 30px;">
+        <h4>Analysis Results:</h4>
+        <div style="background-color: var(--bg-color); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+            {% for r in results %}
+                <div style="margin-bottom: 10px; display: flex; align-items: center;">
+                    {% if 'Detected' in r %}
+                        <span style="color: var(--danger); margin-right: 10px;">⚠️</span>
+                    {% else %}
+                        <span style="color: var(--success); margin-right: 10px;">✅</span>
+                    {% endif %}
+                    {{ r }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

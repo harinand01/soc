@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block page_title %}Reports & Analytics{% endblock %}
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card">
+        <h3>Alerts by Severity</h3>
+        <canvas id="severityChart"></canvas>
+    </div>
+    
+    <div class="card">
+        <h3>Top Attacking IPs</h3>
+        <canvas id="ipChart"></canvas>
+    </div>
+</div>
+
+<script>
+    const severityLabels = JSON.parse('{{ severity_labels|safe }}');
+    const severityData = JSON.parse('{{ severity_data|safe }}');
+    const bgColors = [
+        'rgba(16, 185, 129, 0.6)',  // Low
+        'rgba(245, 158, 11, 0.6)',  // Medium
+        'rgba(239, 68, 68, 0.6)',   // High
+        'rgba(185, 28, 28, 0.6)'    // Critical
+    ];
+
+    const ctx = document.getElementById('severityChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: severityLabels,
+            datasets: [{
+                data: severityData,
+                backgroundColor: bgColors,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+            }
+        }
+    });
+
+    const ipLabels = JSON.parse('{{ ips_labels|safe }}');
+    const ipData = JSON.parse('{{ ips_data|safe }}');
+
+    const ctx2 = document.getElementById('ipChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: ipLabels,
+            datasets: [{
+                label: 'Alert Count',
+                data: ipData,
+                backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: '#334155' } },
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+</script>
+{% endblock %}
