@@ -1,11 +1,10 @@
 {% extends 'base.html' %}
-{% block page_title %}Log Management{% endblock %}
+{% block page_title %}Real-time Activity Logs{% endblock %}
 {% block content %}
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="margin: 0;">Application Logs <span style="font-size: 14px; font-weight: normal; color: var(--text-secondary);">(Total: {{ total_logs }})</span></h3>
+        <h3 style="margin: 0;">Real-time SOC Dashboard <span id="log-count" style="font-size: 14px; font-weight: normal; color: var(--text-secondary);">(Loading...)</span></h3>
         <div style="display: flex; gap: 10px;">
-            <a href="{% url 'logs_index' %}" class="btn">Refresh</a>
             <form method="POST" style="margin: 0;">
                 {% csrf_token %}
                 <button type="submit" name="clear" class="btn danger">Clear Logs</button>
@@ -14,34 +13,77 @@
     </div>
 
     <div style="max-height: 600px; overflow-y: auto;">
-        <table>
+        <table id="logs-table" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
                 <tr>
-                    <th>Log Entry</th>
+                    <th style="padding: 10px; border-bottom: 1px solid var(--border-color, #ccc);">Time</th>
+                    <th style="padding: 10px; border-bottom: 1px solid var(--border-color, #ccc);">User</th>
+                    <th style="padding: 10px; border-bottom: 1px solid var(--border-color, #ccc);">IP</th>
+                    <th style="padding: 10px; border-bottom: 1px solid var(--border-color, #ccc);">Path</th>
+                    <th style="padding: 10px; border-bottom: 1px solid var(--border-color, #ccc);">Status</th>
                 </tr>
             </thead>
             <tbody>
-                {% for log in logs %}
-                {% if log.is_error %}
-                <tr style="background-color: var(--danger-bg);">
-                    <td style="font-family: monospace; color: var(--danger);">
-                        {{ log.text }}
-                    </td>
-                </tr>
-                {% else %}
                 <tr>
-                    <td style="font-family: monospace;">
-                        {{ log.text }}
-                    </td>
+                    <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 20px;">Loading logs...</td>
                 </tr>
-                {% endif %}
-                {% empty %}
-                <tr>
-                    <td style="text-align: center; color: var(--text-secondary);">No logs found in logs.txt.</td>
-                </tr>
-                {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<script>
+    function formatTime(isoString) {
+        const date = new Date(isoString);
+        return date.toLocaleString();
+    }
+
+    function fetchLogs() {
+        fetch('/api/logs/')
+            .then(response => response.json())
+            .then(data => {
+                const logs = data.logs;
+                const tbody = document.querySelector('#logs-table tbody');
+                
+                document.getElementById('log-count').textContent = `(Showing last ${logs.length})`;
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 20px;">No logs available.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                logs.forEach(log => {
+                    const tr = document.createElement('tr');
+                    
+                    // Add styling for errors or unauthorized status
+                    if (log.status >= 400) {
+                        tr.style.backgroundColor = 'var(--danger-bg, #ffe6e6)';
+                        tr.style.color = 'var(--danger, #cc0000)';
+                    } else if (log.status >= 300) {
+                        tr.style.backgroundColor = '#fff3cd'; // warning bg roughly
+                        tr.style.color = '#856404'; // warning text roughly
+                    }
+
+                    tr.innerHTML = `
+                        <td style="padding: 10px; border-bottom: 1px solid var(--border-color, #eee);">${formatTime(log.timestamp)}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid var(--border-color, #eee);">${log.user}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid var(--border-color, #eee); font-family: monospace;">${log.ip}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid var(--border-color, #eee);">${log.path}</td>
+                        <td style="padding: 10px; border-bottom: 1px solid var(--border-color, #eee); font-weight: bold;">${log.status}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching logs:', error);
+            });
+    }
+
+    // Initial fetch
+    fetchLogs();
+    
+    // Refresh every 2 seconds
+    setInterval(fetchLogs, 2000);
+</script>
 {% endblock %}

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from logs.models import RequestLog
 
 def get_logs():
     log_file = r'C:\soc_logs\logs.txt'
@@ -25,34 +26,45 @@ def index(request):
         log_file = r'C:\soc_logs\logs.txt'
         if os.path.exists(log_file):
             open(log_file, 'w').close()
+        RequestLog.objects.all().delete()
         return redirect('logs_index')
     logs = get_logs()
     total_logs = len(logs)
     return render(request, 'logs.html', {'logs': logs, 'total_logs': total_logs})
 
 @csrf_exempt
-def api_receive_log(request):
+def receive_log(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            event = data.get('event', 'UNKNOWN')
+            user = data.get('user', 'anonymous')
             ip = data.get('ip', '0.0.0.0')
-            timestamp = data.get('timestamp', '')
-            user = data.get('user')
+            path = data.get('path', '')
+            method = data.get('method', '')
+            status = data.get('status', 200)
 
-            log_dir = 'soc_logs'
-            os.makedirs(log_dir, exist_ok=True)
-            log_file = os.path.join(log_dir, 'logs.txt')
-
-            log_entry = f"[{timestamp}] {event} | IP={ip}"
-            if user:
-                log_entry += f" | USER={user}"
-            log_entry += "\n"
-
-            with open(log_file, 'a') as f:
-                f.write(log_entry)
-
-            return JsonResponse({"status": "saved"})
+            RequestLog.objects.create(
+                user=user,
+                ip=ip,
+                path=path,
+                method=method,
+                status=status
+            )
+            return JsonResponse({"message": "log received"})
         except json.JSONDecodeError:
             return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
-    return JsonResponse({"status": "error", "message": "Only POST requests are allowed"}, status=405)
+    return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+def get_logs_api(request):
+    if request.method == 'GET':
+        logs = RequestLog.objects.all().order_by('-timestamp')[:50]
+        data = [{
+            'user': log.user,
+            'ip': log.ip,
+            'path': log.path,
+            'method': log.method,
+            'status': log.status,
+            'timestamp': log.timestamp.isoformat(),
+        } for log in logs]
+        return JsonResponse({'logs': data})
+    return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
