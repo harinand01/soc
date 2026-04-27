@@ -195,7 +195,12 @@
         <div class="header">
             <h3>{% block page_title %}Overview{% endblock %}</h3>
             <div>
-                User: {{ request.user.username }} | <a href="{% url 'admin:logout' %}?next=/" style="color: var(--accent);">Logout</a>
+                User: {{ request.user.username }} | 
+                <form action="{% url 'admin:logout' %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="/">
+                    <button type="submit" style="background: none; border: none; color: var(--accent); cursor: pointer; font-family: inherit; font-size: inherit; padding: 0; text-decoration: underline;">Logout</button>
+                </form>
             </div>
         </div>
         <div class="content">
