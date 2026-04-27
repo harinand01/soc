@@ -37,6 +37,17 @@ def receive_log(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
+            print("Received log:", data)
+            
+            required_fields = ['user', 'ip', 'path', 'method', 'status']
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if missing_fields:
+                return JsonResponse(
+                    {"status": "warning", "message": f"Missing required fields: {', '.join(missing_fields)}"},
+                    status=400
+                )
+            
             user = data.get('user', 'anonymous')
             ip = data.get('ip', '0.0.0.0')
             path = data.get('path', '')

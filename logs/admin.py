@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import RequestLog
 
-# Register your models here.
+@admin.register(RequestLog)
+class RequestLogAdmin(admin.ModelAdmin):
+    list_display = ('timestamp', 'user', 'ip', 'method', 'path', 'status')
